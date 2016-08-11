@@ -1,9 +1,14 @@
 #include "bfs_db.h"
 #include "sqlite3.h"
+#include "type.h"
+#include "utarray.h"
 #include <stdio.h>
+#include <string.h>
+#include <stdint.h> 
+#include <stdlib.h>
 
 
-database db;
+//database db;
 
 void create_database(char* filename){
    
@@ -34,16 +39,61 @@ void destroy_database(dabase db){
 
 }
 
-void select_stmt(const char* stmt){
+//
+//int (*callback)(void*,int,char**,char**),  /* Callback function */
+//  void *,                                    /* 1st argument to callback */
+//
+void sql_stmt(const char* query, void * data, int (*callback)(void*,int,char**,char**)){
     char *errmsg;
     int ret;
-
-    ret = sqlite3_exec(db, stmt, 0, 0, &errmsg);
+    
+    ret = sqlite3_exec(db, query, callback, data, &errmsg);
 
     if (ret != SQLITE_OK) {
         printf("Error in statement: %s [%s].\n", stmt, errmsg);
     }
     sqlite3_finalize(stmt);
 }
-void sql_stmt(const char* stmt);
-void insert_stmt(int64_t node);
+
+void sql_stmt_prepare_vertex(const char *sql, UT_array * result, int64_t argc, int64_t *values){
+    
+    char* errorMessage;
+    int retval;
+    Vertex *value;
+    sql_stmt("BEGIN TRANSACTION", NULL, NULL);
+    sqlite3_stmt *stmt;
+
+    //char buffer[] = "select id, parent,value from vertex where id >= ? and id <= ?";
+
+    retval = sqlite3_prepare_v2(db, query, strlen(buffer), &stmt, NULL);
+
+    int i;
+    for(i = 0; i < argc; i++)
+      sqlite3_bind_int64(stmt, 1, values[i]); // or i+1 check this
+
+    while (1) { //Here search something about sqlite3_step vs sqlite3_exec
+        retval = sqlite3_step(stmt);
+
+       if (retval == SQLITE_ROW) {
+            value = (Vertex *) malloc(sizeof(Vertex));
+            value->id = (int64_t) sqlite3_column_int(stmt, 0);
+            value->parent = (int64_t) sqlite3_column_int(stmt, 1);
+            value->value = (int64_t) sqlite3_column_int(stmt, 2);
+            utarray_push_back(result, &value);
+           // printf("Adya Node %d, Value : %d \n", r, value);
+
+        } else if (retval == SQLITE_DONE) {
+            break;
+        } else {
+            sqlite3_finalize(stmt);
+            printf("Some error encountered\n");
+            break;
+        }
+
+    }
+
+    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+    sqlite3_finalize(stmt);
+}
+
+
