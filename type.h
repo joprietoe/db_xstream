@@ -2,6 +2,8 @@
 #define TYPE_H
 #include <stdint.h> 
 
+typedef enum { false = 0, true = !false } bool;
+
 typedef struct _vertex {
 	int64_t id;
     int64_t parent;

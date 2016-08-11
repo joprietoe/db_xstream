@@ -1,8 +1,9 @@
 #include "bfs_db.h"
 #include "sqlite3.h"
 #include "type.h"
-#include "utarray.h"
+#include "uthash.h"
 #include <stdio.h>
+#include <stdarg.h>
 #include <string.h>
 #include <stdint.h> 
 #include <stdlib.h>
@@ -55,7 +56,40 @@ void sql_stmt(const char* query, void * data, int (*callback)(void*,int,char**,c
     sqlite3_finalize(stmt);
 }
 
-void sql_stmt_prepare_vertex(const char *sql, UT_array * result, int64_t argc, int64_t *values){
+bool sql_stmt_prepare(const char *sql, uint8_t argc, ...){
+    
+    char* errorMessage;
+    int retval;
+    sql_stmt("BEGIN TRANSACTION", NULL, NULL);
+    sqlite3_stmt *stmt;
+
+    retval = sqlite3_prepare_v2(db, query, strlen(buffer), &stmt, NULL);
+
+    va_list valist;
+    va_start(valist, argc);
+    int i;
+    for(i = 1; i <= argc; i++)
+      sqlite3_bind_int64(stmt, i, va_arg(valist, int64_t)); // or i+1 check this
+
+    va_end(valist);
+
+    while (1) { 
+        retval = sqlite3_step(stmt);
+       if (retval == SQLITE_DONE) {
+            break;
+        } else {
+            sqlite3_finalize(stmt);
+            printf("Some error encountered\n");
+            return true;
+            break;
+        }
+    }
+    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+    sqlite3_finalize(stmt);
+    return false;
+}
+
+bool sql_stmt_prepare_vertex(const char *sql, uthash **result, int64_t argc, int64_t *values){
     
     char* errorMessage;
     int retval;
@@ -79,14 +113,16 @@ void sql_stmt_prepare_vertex(const char *sql, UT_array * result, int64_t argc, i
             value->id = (int64_t) sqlite3_column_int(stmt, 0);
             value->parent = (int64_t) sqlite3_column_int(stmt, 1);
             value->value = (int64_t) sqlite3_column_int(stmt, 2);
-            utarray_push_back(result, &value);
-           // printf("Adya Node %d, Value : %d \n", r, value);
+            HASH_ADD_INT( *result, id, value );
+            //utarray_push_back(result, &value);
+            // printf("Adya Node %d, Value : %d \n", r, value);
 
         } else if (retval == SQLITE_DONE) {
             break;
         } else {
             sqlite3_finalize(stmt);
             printf("Some error encountered\n");
+            return true;
             break;
         }
 
@@ -94,6 +130,7 @@ void sql_stmt_prepare_vertex(const char *sql, UT_array * result, int64_t argc, i
 
     sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
     sqlite3_finalize(stmt);
+    return false;
 }
 
 
