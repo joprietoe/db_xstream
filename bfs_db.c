@@ -132,5 +132,40 @@ bool sql_stmt_prepare_vertex(const char *sql, uthash **result, int64_t argc, int
     sqlite3_finalize(stmt);
     return false;
 }
+	/*int64_t source_id;
+    int64_t node_id;
+    int64_t value;*/
+//Check insert segun lo de mysqlite
+bool sql_insert_updates(UT_array *updates){
+    
+    char* errorMessage;
+    int retval;
+    Vertex *value;
+    sql_stmt("BEGIN TRANSACTION", NULL, NULL);
+    sqlite3_stmt *stmt;
+
+    char buffer[] = "UPDATE update_table SET id = ?1, node_id = ?2, value = ?3";
+
+    retval = sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
+
+    Update *p;
+    for(p=(Update *)utarray_front(updates); p!=NULL; p=(Update *)utarray_next(update,p)) {
+        sqlite3_bind_int(stmt, 1, p->source_id);
+        sqlite3_bind_int(stmt, 2, p->node_id);
+        sqlite3_bind_int(stmt, 3, p->value);
+
+        int code = sqlite3_step(stmt); 
+        if ( code != SQLITE_DONE){
+            fprintf(stderr, "Commit Failed! because %d\n", code); 
+            return true; //or just break? Check this with my past project
+        }
+ 
+        sqlite3_reset(stmt);
+    }
+
+    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+    sqlite3_finalize(stmt);
+    return false;
+}
 
 
