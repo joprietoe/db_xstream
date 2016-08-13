@@ -9,7 +9,7 @@ project(db_xstream C)
 # thise instructions search the directory tree when cmake is
 # invoked and put all files that match the pattern in the variables 
 # `sources` and `data`
-file(GLOB_RECURSE sources   *.c *.h)
+#file(GLOB_RECURSE sources   *.c *.h)
 #file(GLOB_RECURSE sources_test src/test/*.cpp)
 #file(GLOB_RECURSE data resources/*)
 # you can use set(sources src/main.cpp) etc if you don't want to
@@ -21,7 +21,8 @@ file(GLOB_RECURSE sources   *.c *.h)
 
 # add the data to the target, so it becomes visible in some IDE
 #add_executable(example ${sources} ${data})
-add_executable(db_xstream ${sources})
+set (_SOURCES main.c bfs_algorithm.c bfs_db.c sqlite3.c)
+add_executable(db_xstream ${_SOURCES})
 
 # just for example add some compiler flags
 target_compile_options(db_xstream PUBLIC -g -Wall -c)
