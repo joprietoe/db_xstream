@@ -8,18 +8,12 @@
 #include <stdint.h> 
 #include <stdarg.h>
 
-typedef sqlite3* database;
+void create_database(database db, char* filename);
+void destroy_database_db(database db);
+void sql_stmt(database db, const char* query, void * data, int (*callback)(void*,int,char**,char**));
+bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...);
+bool sql_stmt_prepare_vertex(database db, const char *sql, Vertex **vertices, int64_t id_1, int64_t id_2);
+bool sql_insert_updates(database db, UT_array *updates);
 
-void create_database(char* filename);
-void destroy_database_db(dabase db);
-//void select_stmt(const char* stmt, void * data, int (*callback)(void*,int,char**,char**));
-void sql_stmt(const char* query, void * data, int (*callback)(void*,int,char**,char**));
-bool sql_stmt_prepare(const char *sql, uint8_t argc, ...);
-void sql_stmt_prepare_vertex(const char *sql, uthash **data, int64_t argc, int64_t *values);
-bool sql_insert_updates(UT_array *updates);
-
-//void insert_stmt(int64_t node);
-//void gera_grafo(int64_t n, double dens);
-//void igraph_de_bruijn(int64_t m, int64_t n);
 
 #endif //BFS_DB_H

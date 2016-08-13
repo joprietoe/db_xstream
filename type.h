@@ -1,9 +1,13 @@
+#pragma once
+
 #ifndef TYPE_H
 #define TYPE_H
 #include <stdint.h> 
+#include "sqlite3.h"
 #include "uthash.h"
 #include "utarray.h"
 
+typedef sqlite3* database;
 typedef enum { false = 0, true = !false } bool;
 
 typedef struct _vertex {
@@ -28,10 +32,7 @@ typedef struct _update{
 } Update;
 
 //utarray_new(pairs,&intpair_icd);
-UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL};
+//UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL}; Declare in main maethod
 
-typedef enum TABLE{
-	VERTEX, 
-	EDGE
-};
+
 #endif
