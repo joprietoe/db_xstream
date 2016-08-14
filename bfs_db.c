@@ -15,10 +15,10 @@
 void create_database(database *db, char* filename){
    
   int rc; 
-  sqlite3 *temp;
+  
   rc = sqlite3_open(filename, db); 
   if( rc ){
-      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(temp));
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(*db));
       exit(1);
    }else{
       fprintf(stderr, "Opened database successfully\n");
@@ -87,7 +87,7 @@ bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...){
     return result;
 }
 
-bool sql_stmt_prepare_vertex(database db, const char *sql, Vertex **vertices, int64_t id_1, int64_t id_2){
+bool sql_stmt_prepare_vertex(database db, Vertex **vertices, int64_t id_1, int64_t id_2){
     
     char* errorMessage;
     int retval;
@@ -98,7 +98,7 @@ bool sql_stmt_prepare_vertex(database db, const char *sql, Vertex **vertices, in
 
     char buffer[] = "select id, parent,phase from vertex where id >= ?1 and id <= ?2";
 
-    retval = sqlite3_prepare_v2(db, sql, strlen(buffer), &stmt, NULL);
+    retval = sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
   
     sqlite3_bind_int64(stmt, 1, id_1); // or i+1 check this
     sqlite3_bind_int64(stmt, 2, id_2);

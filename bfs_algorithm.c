@@ -6,13 +6,18 @@
 #include <stdint.h>
 #include <stdio.h>
 
-bool init(database db, int64_t vertex) {
+bool init_alg(database db, int64_t vertex) {
 
-  char *query = "UPDATE vertex SET value = 0, parent = CASE WHEN id = ?1 THEN 0 ELSE -1 END";
+  char *query = "UPDATE vertex SET phase = 0, parent = CASE WHEN id = ?1 THEN 0 ELSE -1 END";
   return !sql_stmt_prepare(db, query, 1, vertex);
 }
 
-bool scatter(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates) {
+bool scatter(database db, Vertex **vertices, int64_t phase, UT_array *updates){
+
+     
+}
+
+bool scatter_aux(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates) {
       Update *up = NULL;
       Vertex *v = NULL;
       HASH_FIND_INT(*vertices, &e->from, v);

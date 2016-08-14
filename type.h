@@ -34,5 +34,9 @@ typedef struct _update{
 //utarray_new(pairs,&intpair_icd);
 //UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL}; Declare in main maethod
 
-
+typedef struct _pair {
+    uint64_t a;
+    uint64_t b;
+    
+}pair;
 #endif

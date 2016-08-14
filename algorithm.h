@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 extern bool init(database db, int64_t vertex);
-extern bool scatter(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates);
+extern bool scatter(database db, Vertex **vertices, int64_t phase, UT_array *updates);
 extern void gather(database db);
 extern Update* generate_update(Vertex *v, Edge *e);
 extern bool apply_update(database db, UT_array *update);

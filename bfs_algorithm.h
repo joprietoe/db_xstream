@@ -8,9 +8,11 @@
 #include "bfs_db.h"
 #include <stdint.h>
 
-bool init(database db, int64_t vertex);
+bool init_alg(database db, int64_t vertex);
 
-bool scatter(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates);
+bool scatter(database db, Vertex **vertices, int64_t phase, UT_array *updates);
+
+bool scatter_aux(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates);
 
 void gather(database db);
 

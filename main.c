@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
+#include <inttypes.h> 
 #include <time.h>
 #include "sqlite3.h"
 #include "utarray.h"
@@ -9,12 +11,43 @@
 #include "type.h"
 #include "bfs_db.h"
 #include "bfs_algorithm.h"
+#include "queries.h"
 
+pair * create_intervals(int num, int n_int){
+		pair *temp;
+		temp = malloc(n_int * sizeof(pair));
+		uint64_t pass;
+		pass = num/n_int;
+		int i, begin = 1;
+		
+		for(i = 0; i < n_int; i++){
+				
+				pair t;
+				if(i < n_int - 1){
+						t.a = begin;
+						t.b = t.a + pass - 1;
+						begin += pass;
+					}
+				else{
+					 
+					t.a = begin;
+					t.b = num;
+					
+					}	
+				temp[i] = t;
+			}
+			
+			return temp;
+	}
 
+void empty_hash(Vertex **vertices){
 
-//database db;
-
-
+    Vertex *v, *tmp;
+    HASH_ITER(hh, *vertices, v, tmp) {
+        HASH_DEL(*vertices, v);
+        free(v);
+    }
+}
 /*void igraph_de_bruijn(int m, int n) {
 
     //m - number of symbols 
@@ -60,6 +93,7 @@
 
 }*/
 
+
 int main(int argc, char** argv) {
 
     clock_t begin, end;
@@ -85,27 +119,24 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    /*sql_stmt(db, "PRAGMA synchronous=OFF", NULL, NULL);
+    sql_stmt(db, "PRAGMA synchronous=OFF", NULL, NULL);
     sql_stmt(db, "PRAGMA temp_store = MEMORY", NULL, NULL);
     sql_stmt(db, "PRAGMA JOURNAL_MODE=OFF", NULL, NULL);
-    sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
+    //sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
     sql_stmt(db, "PRAGMA cache_size=10000", NULL, NULL);
-    sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);*/
+    sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);
 
 
-    
+   // create table if not exists edge (source integer, target integer, cost integer,  primary key (source,target))
     /************ CREATE TABLES *********/
     char *sql_create_edge = "create table if not exists edge" 
-                            "(source integer not null, target integer not null, cost integer not null)"
-                            "WITHOUT ROWID";
+                            "(source integer, target integer, cost integer, primary key (source,target))" ;
 
     char *sql_create_vertex = "create table if not exists vertex" 
-                            "(id integer not null, parent integer not null, phase integer not null)"
-                            "WITHOUT ROWID";
+                            "(id integer primary key, parent integer, phase integer)";
 
    char *sql_create_update = "create temporary table update_table" 
-                            "(target integer not null, parent integer not null, phase integer not null)"
-                            "WITHOUT ROWID";
+                            "(target integer primary key, parent integer not null, phase integer)";
 
     sql_stmt(db, sql_create_edge, NULL, NULL);
    
@@ -137,7 +168,7 @@ int main(int argc, char** argv) {
   // sql_stmt(db,"create unique index unique_edge_index on edge_table (source,target)");
   // sql_stmt(db,"vacuum");
   // sql_stmt(db,"create view graph as select id_node, source, target, visit \ 
-				from edge_table join node_table on edge_table.target = node_table.id_node");
+ //				from edge_table join node_table on edge_table.target = node_table.id_node");
 
     // insert_countries();
 
@@ -156,8 +187,8 @@ int main(int argc, char** argv) {
     fprintf(fd, "Time spent in graph creation: %.3f\n", time_spent);
     
     /********************** CREATE INDEX ***************************/
-    sql_stmt(db,"create unique index unique_edge_index on edge (source,target)", NULL, NULL);
-    sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL, NULL);
+    //sql_stmt(db,"create unique index unique_edge_index on edge (source,target)", NULL, NULL);
+   // sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL, NULL);
     
     //printf("\nNumber of edges [%U]\n\n");
     
@@ -176,7 +207,54 @@ int main(int argc, char** argv) {
     /********************* ALGORITHM  **************************/
     begin = clock();
     time(&start_t);
+    bool global_execution = true;
+
+    /******************** CREATE INTERVALS ******************/
+
+     int number_of_intervals, i;  
+     printf("Number of intervals: ");
+     scanf("%d",&number_of_intervals);
+    pair * intervals = create_intervals(nodes, number_of_intervals);
     
+    
+    /************ INIT SOME STRUCTS ***********************/
+    int64_t phase = 1;
+    UT_array *updates = NULL;
+    UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL};
+    utarray_new(updates,&update_icd);
+    
+    Vertex *vertices = NULL;
+
+
+    /*************** REAL STUFF ****************************/
+    init_alg(db,1);
+
+    //bool gather_execution = true;
+
+    while(global_execution){
+
+        global_execution = false;
+        //scatter
+        for(i = 0; i < number_of_intervals; i++){
+             //load vertices
+
+             sql_stmt_prepare_vertex(db, &vertices, intervals[i].a, intervals[i].b);
+             
+             unsigned int num_vertices;
+             num_vertices = HASH_COUNT(vertices);
+             printf("there are %u vertices interval \n", num_vertices);
+             
+             empty_hash(&vertices);
+
+             if(scatter(db, &vertices, phase, updates))
+                    global_execution = true;
+        }
+
+        if(global_execution)
+            gather(db);
+           
+        
+    }
     //printf("\nBFS\n\n");
     //scanf("%d", &init);
     init = 1;
@@ -199,3 +277,4 @@ int main(int argc, char** argv) {
     destroy_database(db);
     return (EXIT_SUCCESS);
 }
+
