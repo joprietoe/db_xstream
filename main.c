@@ -10,61 +10,12 @@
 #include "bfs_db.h"
 #include "bfs_algorithm.h"
 
-database db;
-/*void gera_grafo(int n, double dens) {
-
-    int i, j;
-    unsigned long edge;
-    char* errorMessage;
-
-    //char *szSQL = "insert into edge_table (source, target) values (?,?)";
-    sqlite3_stmt *stmt;
-    char buffer[] = "INSERT INTO edge_table VALUES (?1, ?2)";
-    sqlite3_prepare_v2(db, buffer, strlen(buffer) + 1, &stmt, NULL);
-
-    printf("\n\n Gerando Grafo Aleatorio de Densidade: %f #Vertices: %d\n\n", dens, n);
-    edge = 0;
-    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
-    for (i = 1; i <= n; i++) {
-        insertParamSQL(i);
-        for (j = 1; j <= n; j++) {
 
 
-            if (i != j) {
-                if (randomn() < dens) {
-
-                    sqlite3_bind_int(stmt, 1, i);
-                    sqlite3_bind_int(stmt, 2, j);
-                    edge++;
-                    if (sqlite3_step(stmt) != SQLITE_DONE) {
-                        printf("Commit Failed!\n");
-
-                    }
-
-                    //printf("Node i:%d,  --- Node j: %d, Edge: %lu \n", i, j, edge);
-                    sqlite3_clear_bindings(stmt);
-                    sqlite3_reset(stmt);
-                }
+//database db;
 
 
-                //sql_stmt("commit");
-
-            }
-        }
-
-        sqlite3_reset(stmt);
-        //        sql_stmt("commit");
-
-
-
-    }
-
-    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
-    sqlite3_finalize(stmt);
-
-}
-
-void igraph_de_bruijn(int m, int n) {
+/*void igraph_de_bruijn(int m, int n) {
 
     //m - number of symbols 
     //n - length of strings 
@@ -117,18 +68,25 @@ int main(int argc, char** argv) {
     FILE* fd = NULL;
     time_t start_t, end_t;
 	double diff_t;
+    database db = NULL;
     
+    
+   
 /*HASH_ITER(hh, users, s, tmp) {
         HASH_DEL(users, s);
         free(s);
     }*/
 
-    sqlite3_open("./grafo2.db", &db);
-
-    if (db == 0) {
+    /********** INIT ****************/
+    
+    create_database(&db, "./grafo2.db");
+    if (db == NULL) {
         printf("Could not open database.");
         return 1;
     }
+
+    
+    /********** END INIT ****************/
 
     //sql_stmt("create table if not exists edge_table (source integer not null, target integer not null,  PRIMARY KEY (source, target))");
    
@@ -145,11 +103,12 @@ int main(int argc, char** argv) {
 
      begin = clock();
      //printf("Nodos y densidad: ");
-    //scanf("%d,%f",&nodes,&dens);
-    //gera_grafo(nodes,dens);
+     //scanf("%d,%f",&nodes,&dens);
+     
+     gera_grafo(db, 5,0.3);
     
-   printf("M,N: ");
-   scanf("%d,%d", &m, &n);
+   //printf("M,N: ");
+   //scanf("%d,%d", &m, &n);
 
     //igraph_de_bruijn(m,n);
     

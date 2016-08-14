@@ -1,5 +1,6 @@
 #ifndef BFS_ALGORITHM_H
 #define BFS_ALGORITHM_H
+
 #include "algorithm.h"
 #include "type.h"
 #include "utarray.h"
@@ -16,4 +17,6 @@ void gather(database db);
 Update *generate_update(Vertex *v, Edge *e);
 
 bool apply_update(database db, UT_array *updates);
+
+
 #endif

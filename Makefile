@@ -20,6 +20,6 @@ bfs_algorithm: utarray.h uthash.h bfs_db.h type.h algorithm.h bfs_algorithm.h
 clean: 
 	$(RM) count *.o *~
 	$(RM) test
-	$(RM) grafo2.db
+	$(RM) *.db
 	$(RM) time.txt
 

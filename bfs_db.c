@@ -7,22 +7,25 @@
 #include <string.h>
 #include <stdint.h> 
 #include <stdlib.h>
+#include <limits.h>
 
 
 //database db;
 
-void create_database(database db, char* filename){
+void create_database(database *db, char* filename){
    
   int rc; 
-  
-  rc = sqlite3_open(filename, &db); 
+  sqlite3 *temp;
+  rc = sqlite3_open(filename, db); 
   if( rc ){
-      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(db));
+      fprintf(stderr, "Can't open database: %s\n", sqlite3_errmsg(temp));
       exit(1);
    }else{
       fprintf(stderr, "Opened database successfully\n");
    }
-   sqlite3_close(db);
+
+  // db = temp;
+  // sqlite3_close(db);
 
 }
 
@@ -164,3 +167,77 @@ bool sql_insert_updates(database db, UT_array *updates){
 }
 
 
+void gera_grafo(database db, int n, double dens) {
+
+    int i, j;
+    unsigned long edge;
+    char* errorMessage;
+    bool error_flag = false;
+
+    //char *szSQL = "insert into edge_table (source, target) values (?,?)";
+    sqlite3_stmt *stmt, *stmt_v;
+    char buffer[] = "INSERT INTO edge_table VALUES (?1, ?2)";
+    char buffer2[] = "INSERT INTO vertex VALUES (?1, -1 , ?2)";
+
+    sqlite3_prepare_v2(db, buffer, strlen(buffer) + 1, &stmt, NULL);
+    sqlite3_prepare_v2(db, buffer, strlen(buffer2) + 1, &stmt_v, NULL);
+    printf("\n\n Gerando Grafo Aleatorio de Densidade: %f #Vertices: %d\n\n", dens, n);
+    edge = 0;
+    srand((unsigned) time(NULL));
+    
+
+    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
+    for (i = 1; i <= n; i++) {
+        
+        sqlite3_bind_int(stmt_v, 1, i);
+        sqlite3_bind_int(stmt_v, 2, INT_MAX);
+
+        if (sqlite3_step(stmt_v) != SQLITE_DONE) {
+               printf("Commit Failed inserting vertex [%d]!\n", i);
+               error_flag = false;
+               break;
+        }
+        sqlite3_clear_bindings(stmt_v);
+        sqlite3_reset(stmt_v);
+        for (j = 1; j <= n; j++) {
+
+            double random = (double)rand()/(double)(RAND_MAX);
+            if (i != j) {
+                if (random < dens) {
+
+                    sqlite3_bind_int(stmt, 1, i);
+                    sqlite3_bind_int(stmt, 2, j);
+                    edge++;
+                    if (sqlite3_step(stmt) != SQLITE_DONE) {
+                        printf("Commit Failed!\n");
+                        error_flag = false;
+                        break;
+
+                    }
+
+                    //printf("Node i:%d,  --- Node j: %d, Edge: %lu \n", i, j, edge);
+                    
+                }
+
+            }
+            sqlite3_clear_bindings(stmt);
+            sqlite3_reset(stmt);
+            
+        }
+
+        //sqlite3_reset(stmt);
+        //        sql_stmt("commit");
+
+
+
+    }
+
+    if(error_flag)
+      sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, &errorMessage);
+    else    
+      sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+    //sqlite3_reset(stmt_v);
+    //sqlite3_reset(stmt);
+    sqlite3_finalize(stmt);
+
+}

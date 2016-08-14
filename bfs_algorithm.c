@@ -4,6 +4,7 @@
 #include "uthash.h"
 #include "bfs_db.h"
 #include <stdint.h>
+#include <stdio.h>
 
 bool init(database db, int64_t vertex) {
 
@@ -63,3 +64,4 @@ bool apply_update(database db, UT_array *updates) {
   utarray_clear(updates);
   return ret;
 }
+
