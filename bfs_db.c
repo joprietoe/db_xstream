@@ -174,13 +174,13 @@ void gera_grafo(database db, int n, double dens) {
     char* errorMessage;
     bool error_flag = false;
 
-    //char *szSQL = "insert into edge_table (source, target) values (?,?)";
+    //char *szSQL = "insert into edge (source, target, cost) values (?,?, 1)";
     sqlite3_stmt *stmt, *stmt_v;
-    char buffer[] = "INSERT INTO edge_table VALUES (?1, ?2)";
-    char buffer2[] = "INSERT INTO vertex VALUES (?1, -1 , ?2)";
+    char buffer[] = "INSERT INTO edge (source, target, cost) VALUES (?1, ?2, 1)";
+    char buffer2[] = "INSERT INTO vertex(id, parent, phase) VALUES (?1, -1 , ?2)";
 
     sqlite3_prepare_v2(db, buffer, strlen(buffer) + 1, &stmt, NULL);
-    sqlite3_prepare_v2(db, buffer, strlen(buffer2) + 1, &stmt_v, NULL);
+    sqlite3_prepare_v2(db, buffer2, strlen(buffer2) + 1, &stmt_v, NULL);
     printf("\n\n Gerando Grafo Aleatorio de Densidade: %f #Vertices: %d\n\n", dens, n);
     edge = 0;
     srand((unsigned) time(NULL));
@@ -216,12 +216,12 @@ void gera_grafo(database db, int n, double dens) {
                     }
 
                     //printf("Node i:%d,  --- Node j: %d, Edge: %lu \n", i, j, edge);
-                    
+                    //sqlite3_clear_bindings(stmt);
+                    sqlite3_reset(stmt);
                 }
 
             }
-            sqlite3_clear_bindings(stmt);
-            sqlite3_reset(stmt);
+            
             
         }
 

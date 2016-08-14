@@ -85,27 +85,49 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    
-    /********** END INIT ****************/
+    /*sql_stmt(db, "PRAGMA synchronous=OFF", NULL, NULL);
+    sql_stmt(db, "PRAGMA temp_store = MEMORY", NULL, NULL);
+    sql_stmt(db, "PRAGMA JOURNAL_MODE=OFF", NULL, NULL);
+    sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
+    sql_stmt(db, "PRAGMA cache_size=10000", NULL, NULL);
+    sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);*/
 
-    //sql_stmt("create table if not exists edge_table (source integer not null, target integer not null,  PRIMARY KEY (source, target))");
-   
+
     
-    //sql_stmt(db,"create table if not exists edge_table (source integer not null, target integer not null)");
-    //sql_stmt(db,"create table if not exists node_table (id_node integer primary key, visit INTEGER DEFAULT (0))");
-    //sql_stmt(db,"delete from edge_table");
-    //sql_stmt(db,"delete from node_table");
+    /************ CREATE TABLES *********/
+    char *sql_create_edge = "create table if not exists edge" 
+                            "(source integer not null, target integer not null, cost integer not null)"
+                            "WITHOUT ROWID";
+
+    char *sql_create_vertex = "create table if not exists vertex" 
+                            "(id integer not null, parent integer not null, phase integer not null)"
+                            "WITHOUT ROWID";
+
+   char *sql_create_update = "create temporary table update_table" 
+                            "(target integer not null, parent integer not null, phase integer not null)"
+                            "WITHOUT ROWID";
+
+    sql_stmt(db, sql_create_edge, NULL, NULL);
+   
+    sql_stmt(db, sql_create_update, NULL, NULL);
+    sql_stmt(db, sql_create_vertex, NULL, NULL);
+    
+    //sql_stmt(db,"truncate from edge_table", NULL, NULL);
+    //sql_stmt(db,"truncate from node_table", NULL, NULL);
     //sql_stmt(db,"vacuum");
 
+    /********** END INIT ****************/
+
+    /********** LOAD DATA ***************/
    
     int nodes, m, n, init;
     float dens;
 
      begin = clock();
-     //printf("Nodos y densidad: ");
-     //scanf("%d,%f",&nodes,&dens);
+     printf("Nodos y densidad: ");
+     scanf("%d,%f",&nodes,&dens);
      
-     gera_grafo(db, 5,0.3);
+     gera_grafo(db, nodes,dens);
     
    //printf("M,N: ");
    //scanf("%d,%d", &m, &n);
@@ -132,18 +154,26 @@ int main(int argc, char** argv) {
     }
     
     fprintf(fd, "Time spent in graph creation: %.3f\n", time_spent);
-    printf("\nNumber of edges\n\n");
-    //select_stmt("select count(*) from edge_table");
-    //select_stmt("select * from edge_table");
+    
+    /********************** CREATE INDEX ***************************/
+    sql_stmt(db,"create unique index unique_edge_index on edge (source,target)", NULL, NULL);
+    sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL, NULL);
+    
+    //printf("\nNumber of edges [%U]\n\n");
+    
+    //sql_stmt("select count(*) from edge", NULL, NULL);
+    
 
-    printf("\nNumber of nodes\n\n");
+    //printf("\nNumber of nodes\n\n");
    // select_stmt("select count(*) from node_table");
     //select_stmt("select * from node_table");
 
     //printf("\nVisit nodes\n\n");
     //int a = isVisit(4);
     //printf("Visit :%d \n",a);
+    /********************* END LOAD DATA ************************/
 
+    /********************* ALGORITHM  **************************/
     begin = clock();
     time(&start_t);
     
@@ -164,7 +194,8 @@ int main(int argc, char** argv) {
 	printf(fd, "Time spent in bfs %.3f\n", time_spent);
 	printf(fd, "Time2 spent in bfs %.3lf\n", diff_t);
 	
+    /*************************** END ALGORITHM *********************/
 	fclose(fd);
-    sqlite3_close(db);
+    destroy_database(db);
     return (EXIT_SUCCESS);
 }
