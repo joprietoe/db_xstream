@@ -11,7 +11,7 @@
 #include "type.h"
 #include "bfs_db.h"
 #include "bfs_algorithm.h"
-#include "queries.h"
+//#include "queries.h"
 
 pair * create_intervals(int num, int n_int){
 		pair *temp;
@@ -122,7 +122,7 @@ int main(int argc, char** argv) {
     sql_stmt(db, "PRAGMA synchronous=OFF", NULL, NULL);
     sql_stmt(db, "PRAGMA temp_store = MEMORY", NULL, NULL);
     sql_stmt(db, "PRAGMA JOURNAL_MODE=OFF", NULL, NULL);
-    //sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
+   // sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
     sql_stmt(db, "PRAGMA cache_size=10000", NULL, NULL);
     sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);
 
@@ -135,8 +135,8 @@ int main(int argc, char** argv) {
     char *sql_create_vertex = "create table if not exists vertex" 
                             "(id integer primary key, parent integer, phase integer)";
 
-   char *sql_create_update = "create temporary table update_table" 
-                            "(target integer primary key, parent integer not null, phase integer)";
+   char *sql_create_update = "create table update_table" 
+                            "(id integer, parent integer not null, account integer)";
 
     sql_stmt(db, sql_create_edge, NULL, NULL);
    
@@ -218,7 +218,7 @@ int main(int argc, char** argv) {
     
     
     /************ INIT SOME STRUCTS ***********************/
-    int64_t phase = 1;
+    int64_t phase = 0;
     UT_array *updates = NULL;
     UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL};
     utarray_new(updates,&update_icd);
@@ -234,7 +234,11 @@ int main(int argc, char** argv) {
     while(global_execution){
 
         global_execution = false;
+        phase += 1;
         //scatter
+
+        sql_stmt(db,"DELETE FROM update_table", NULL, NULL);
+        
         for(i = 0; i < number_of_intervals; i++){
              //load vertices
 
@@ -244,14 +248,23 @@ int main(int argc, char** argv) {
              num_vertices = HASH_COUNT(vertices);
              printf("there are %u vertices interval \n", num_vertices);
              
+              if(scatter(db, &vertices, intervals[i].a, intervals[i].b, phase, updates))
+                    global_execution = true;
+
              empty_hash(&vertices);
 
-             if(scatter(db, &vertices, phase, updates))
-                    global_execution = true;
+            
         }
 
-        if(global_execution)
+        if(global_execution){
+            Update *p;
+            for(p=(Update *)utarray_front(updates); p!=NULL; p=(Update *)utarray_next(updates,p)) {
+                printf("id: [%d], parent: [%d], account[%d]\n",p->id, p->parent, p->account);
+            }
+            apply_update(db,updates);
             gather(db);
+        }
+            
            
         
     }

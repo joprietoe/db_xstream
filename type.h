@@ -25,9 +25,9 @@ typedef struct _edge {
 } Edge;
 
 typedef struct _update{
-	int64_t source_id;
-    int64_t node_id;
-    int64_t value;
+	int64_t id;
+    int64_t parent;
+    int64_t account;
 
 } Update;
 

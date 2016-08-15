@@ -10,9 +10,10 @@
 
 bool init_alg(database db, int64_t vertex);
 
-bool scatter(database db, Vertex **vertices, int64_t phase, UT_array *updates);
 
 bool scatter_aux(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates);
+
+bool scatter(database db, Vertex **vertices, int64_t min_id, int64_t max_id , int64_t phase, UT_array *updates);
 
 void gather(database db);
 

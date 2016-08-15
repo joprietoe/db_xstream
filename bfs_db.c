@@ -8,6 +8,7 @@
 #include <stdint.h> 
 #include <stdlib.h>
 #include <limits.h>
+#include <time.h>
 
 
 //database db;
@@ -63,13 +64,13 @@ bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...){
     sql_stmt(db,"BEGIN TRANSACTION", NULL, NULL);
     sqlite3_stmt *stmt;
 
-    retval = sqlite3_prepare_v2(db, sql, sizeof(sql) + argc * sizeof(int64_t), &stmt, NULL);
+    retval = sqlite3_prepare_v2(db, sql, strlen(sql), &stmt, NULL);
 
     va_list valist;
     va_start(valist, argc);
     int i;
     for(i = 1; i <= argc; i++)
-      sqlite3_bind_int64(stmt, i, va_arg(valist, int64_t)); // or i+1 check this
+      sqlite3_bind_int(stmt, i, va_arg(valist, int)); // or i+1 check this
 
     va_end(valist);
 
@@ -135,29 +136,29 @@ bool sql_insert_updates(database db, UT_array *updates){
     
     char* errorMessage;
     //int retval;
-    bool result = false;
+    bool result = true;
     
     sql_stmt(db,"BEGIN TRANSACTION", NULL, NULL);
     sqlite3_stmt *stmt;
 
-    char buffer[] = "INSERT update_table (id,node_id, phase) values (?1,?2,?3)";
+    char buffer[] = "INSERT INTO update_table (id,parent, account) values (?1,?2,?3)";
 
     //retval = sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
     sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
 
     Update *p = NULL;
     for(p=(Update *)utarray_front(updates); p!=NULL; p=(Update *)utarray_next(updates,p)) {
-        sqlite3_bind_int(stmt, 1, p->source_id);
-        sqlite3_bind_int(stmt, 2, p->node_id);
-        sqlite3_bind_int(stmt, 3, p->value);
+        sqlite3_bind_int(stmt, 1, p->id);
+        sqlite3_bind_int(stmt, 2, p->parent);
+        sqlite3_bind_int(stmt, 3, p->account);
 
         int code = sqlite3_step(stmt); 
         if ( code != SQLITE_DONE){
             fprintf(stderr, "Commit Failed! because %d\n", code); 
-            result = true;
+            result = false;
             break;
         }
- 
+        sqlite3_clear_bindings(stmt);
         sqlite3_reset(stmt);
     }
 
@@ -238,6 +239,7 @@ void gera_grafo(database db, int n, double dens) {
       sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
     //sqlite3_reset(stmt_v);
     //sqlite3_reset(stmt);
+    sqlite3_finalize(stmt_v);
     sqlite3_finalize(stmt);
 
 }
