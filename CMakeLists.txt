@@ -21,7 +21,7 @@ project(db_xstream C)
 
 # add the data to the target, so it becomes visible in some IDE
 #add_executable(example ${sources} ${data})
-set (_SOURCES main.c bfs_algorithm.c bfs_db.c sqlite3.c)
+set (_SOURCES main.c bfs_algorithm.c bfs_db.c sqlite3.c generator.c)
 add_executable(db_xstream ${_SOURCES})
 
 # just for example add some compiler flags

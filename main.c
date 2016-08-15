@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
-#include <inttypes.h> 
 #include <time.h>
 #include "sqlite3.h"
 #include "utarray.h"
@@ -11,6 +10,7 @@
 #include "type.h"
 #include "bfs_db.h"
 #include "bfs_algorithm.h"
+#include "generator.h"
 //#include "queries.h"
 
 pair * create_intervals(int num, int n_int){
@@ -48,51 +48,6 @@ void empty_hash(Vertex **vertices){
         free(v);
     }
 }
-/*void igraph_de_bruijn(int m, int n) {
-
-    //m - number of symbols 
-    //n - length of strings 
-
-    long int no_of_nodes, no_of_edges;
-    long int i, j;
-    long int mm = m;
-
-    no_of_nodes = (long int) pow(m, n);
-    no_of_edges = no_of_nodes*m;
-
-    char* errorMessage;
-    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
-    sqlite3_stmt *stmt;
-    char buffer[] = "INSERT INTO edge_table VALUES (?1, ?2)";
-
-    sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
-
-    for (i = 0; i < no_of_nodes; i++) {
-
-        insertParamSQL(i);
-
-        long int basis = (i * mm) % no_of_nodes;
-        for (j = 0; j < m; j++) {
-	
-            sqlite3_bind_int(stmt, 1, i);
-            sqlite3_bind_int(stmt, 2, basis + j);
-            if (sqlite3_step(stmt) != SQLITE_DONE) {
-                printf("Commit Failed!\n");
-
-            }
-
-            sqlite3_clear_bindings(stmt);
-            sqlite3_reset(stmt);
-        }
-        // sqlite3_reset(stmt);
-    }
-
-    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
-    sqlite3_finalize(stmt);
-
-
-}*/
-
 
 int main(int argc, char** argv) {
 
@@ -130,10 +85,10 @@ int main(int argc, char** argv) {
    // create table if not exists edge (source integer, target integer, cost integer,  primary key (source,target))
     /************ CREATE TABLES *********/
     char *sql_create_edge = "create table if not exists edge" 
-                            "(source integer, target integer, cost integer, primary key (source,target))" ;
+                            "(source integer, target integer, cost integer)" ;
 
     char *sql_create_vertex = "create table if not exists vertex" 
-                            "(id integer primary key, parent integer, phase integer)";
+                            "(id integer , parent integer, phase integer)";
 
    char *sql_create_update = "create table update_table" 
                             "(id integer, parent integer not null, account integer)";
@@ -143,30 +98,30 @@ int main(int argc, char** argv) {
     sql_stmt(db, sql_create_update, NULL, NULL);
     sql_stmt(db, sql_create_vertex, NULL, NULL);
     
-    //sql_stmt(db,"truncate from edge_table", NULL, NULL);
-    //sql_stmt(db,"truncate from node_table", NULL, NULL);
-    //sql_stmt(db,"vacuum");
+   
 
     /********** END INIT ****************/
 
     /********** LOAD DATA ***************/
    
-    int nodes, m, n, init;
-    float dens;
+    int nodes, m, n;
+    //float dens = 0.0;
+    nodes = m = n = 0;
 
      begin = clock();
-     printf("Nodos y densidad: ");
-     scanf("%d,%f",&nodes,&dens);
+    // printf("Nodos y densidad: ");
+     //scanf("%d,%f",&nodes,&dens);
      
-     gera_grafo(db, nodes,dens);
+     //gera_grafo(db, nodes,dens);
     
-   //printf("M,N: ");
-   //scanf("%d,%d", &m, &n);
+   printf("M,N: ");
+   scanf("%d,%d", &m, &n);
 
-    //igraph_de_bruijn(m,n);
+   igraph_de_bruijn(db,m,n);
     
-  // sql_stmt(db,"create unique index unique_edge_index on edge_table (source,target)");
-  // sql_stmt(db,"vacuum");
+   sql_stmt(db,"create unique index unique_edge_index on edge (source,target)", NULL,NULL);
+   sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL,NULL);
+   sql_stmt(db,"vacuum", NULL,NULL);
   // sql_stmt(db,"create view graph as select id_node, source, target, visit \ 
  //				from edge_table join node_table on edge_table.target = node_table.id_node");
 
@@ -268,10 +223,6 @@ int main(int argc, char** argv) {
            
         
     }
-    //printf("\nBFS\n\n");
-    //scanf("%d", &init);
-    init = 1;
-    //bfs(init);
     
     end = clock();
     time(&end_t);
@@ -282,8 +233,8 @@ int main(int argc, char** argv) {
     
     printf("\nTime spent in bfs %.3f \n",time_spent);
     printf("Time2 spent in bfs %.3lf\n", diff_t);
-	printf(fd, "Time spent in bfs %.3f\n", time_spent);
-	printf(fd, "Time2 spent in bfs %.3lf\n", diff_t);
+	fprintf(fd, "Time spent in bfs %.3f\n", time_spent);
+	fprintf(fd, "Time2 spent in bfs %.3lf\n", diff_t);
 	
     /*************************** END ALGORITHM *********************/
 	fclose(fd);
