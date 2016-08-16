@@ -1,22 +1,37 @@
 #include "generator.h"
+#include "bfs_db.h"
 #include "type.h"
 #include "sqlite3.h"
 #include <inttypes.h> 
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
+#include <time.h>
+
+//char buffer[] = "INSERT INTO edge (source, target, cost) VALUES (?1, ?2, 1)";
+    //char buffer2[] = "INSERT INTO vertex(id, parent, phase) VALUES (?1, -1 , ?2)";
+
+void import_from_txt_file(database db, char *vertex_filename, char *edge_filename){
+
+    char *edge = "INSERT INTO edge (source, target, cost) VALUES (?1, ?2, 1)";
+    char *vertex = "INSERT INTO vertex(id, parent, phase) VALUES (?1, -1 , ?2)";
+    
+    import_from_file_vertex(db,vertex,vertex_filename);
+    import_from_file_edge(db,edge,edge_filename);
+
+}
 
 void igraph_de_bruijn(database db, int m, int n) {
 
     //m - number of symbols 
     //n - length of strings 
 
-    long int no_of_nodes, no_of_edges;
-    long int i, j;
-    long int mm = m;
+   unsigned long no_of_nodes;
+   unsigned long i, j;
+   unsigned long mm = m;
 
-    no_of_nodes = (long int) pow(m, n);
-    no_of_edges = no_of_nodes*m;
+    no_of_nodes = (unsigned long) pow(m, n);
+    //no_of_edges = no_of_nodes*m;
 
     char* errorMessage;
     sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
@@ -30,15 +45,15 @@ void igraph_de_bruijn(database db, int m, int n) {
     for (i = 0; i < no_of_nodes; i++) {
 
          sqlite3_bind_int(stmt_v, 1, i);
-        sqlite3_bind_int(stmt_v, 2, INT_MAX);
+        sqlite3_bind_int(stmt_v, 2, UINT_MAX);
 		 if (sqlite3_step(stmt_v) != SQLITE_DONE) {
-               printf("Commit Failed inserting vertex [%d]!\n", i);
+               printf("Commit Failed inserting vertex [%lu]!\n", i);
                //error_flag = false;
                break;
         }
         sqlite3_clear_bindings(stmt_v);
         sqlite3_reset(stmt_v);
-        long int basis = (i * mm) % no_of_nodes;
+        unsigned long basis = (i * mm) % no_of_nodes;
         for (j = 0; j < m; j++) {
 	
             sqlite3_bind_int(stmt, 1, i);
@@ -88,7 +103,7 @@ void gera_grafo(database db, int n, double dens) {
 
         if (sqlite3_step(stmt_v) != SQLITE_DONE) {
                printf("Commit Failed inserting vertex [%d]!\n", i);
-               error_flag = false;
+               error_flag = true;
                break;
         }
         sqlite3_clear_bindings(stmt_v);
@@ -104,7 +119,7 @@ void gera_grafo(database db, int n, double dens) {
                     edge++;
                     if (sqlite3_step(stmt) != SQLITE_DONE) {
                         printf("Commit Failed!\n");
-                        error_flag = false;
+                        error_flag = true;
                         break;
 
                     }
@@ -126,13 +141,14 @@ void gera_grafo(database db, int n, double dens) {
 
     }
 
+sqlite3_finalize(stmt_v);
+    sqlite3_finalize(stmt);
     if(error_flag)
       sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, &errorMessage);
     else    
       sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
     //sqlite3_reset(stmt_v);
     //sqlite3_reset(stmt);
-    sqlite3_finalize(stmt_v);
-    sqlite3_finalize(stmt);
+    
 
 }

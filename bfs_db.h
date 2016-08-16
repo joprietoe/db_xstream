@@ -15,5 +15,6 @@ bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...);
 bool sql_stmt_prepare_vertex(database db, Vertex **vertices, int64_t id_1, int64_t id_2);
 bool sql_insert_updates(database db, UT_array *updates);
 void gera_grafo(database db, int n, double dens);
-
+unsigned long long import_from_file_vertex(database db, char *query,char *fileName);
+unsigned long long import_from_file_edge(database db, char *query,char *fileName);
 #endif //BFS_DB_H

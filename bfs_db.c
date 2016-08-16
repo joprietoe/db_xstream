@@ -8,6 +8,7 @@
 #include <stdint.h> 
 #include <stdlib.h>
 #include <time.h>
+#include <limits.h>
 
 
 //database db;
@@ -166,4 +167,111 @@ bool sql_insert_updates(database db, UT_array *updates){
     return result;
 }
 
+unsigned long long import_from_file_vertex(database db, char *query,char *fileName){
 
+    //int i, j;
+    unsigned long long vertex = -1, v;
+    char* errorMessage;
+    bool error_flag = false;
+    FILE *fp ;
+
+    
+    sqlite3_stmt *stmt;
+    
+
+    sqlite3_prepare_v2(db, query, strlen(query)*sizeof(char) + 2*sizeof(int64_t), &stmt, NULL);
+    //sqlite3_prepare_v2(db, buffer2, strlen(buffer2) + 1, &stmt_v, NULL);
+    printf("\n\n Importing vertex from file %s \n\n", fileName);
+    v = 0;
+       
+
+    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
+
+    fp = fopen (fileName, "r");
+	if (fp == NULL) {
+		printf("Erro na abertura do arquivo.\n");
+	    abort();	
+	}
+	else{
+	while (fscanf(fp, "%llu", &vertex) == 1){
+		
+         sqlite3_bind_int64(stmt, 1, vertex);
+         sqlite3_bind_int64(stmt, 2, UINT_MAX);
+         
+         if (sqlite3_step(stmt) != SQLITE_DONE) {
+               printf("Commit Failed!\n");
+               error_flag = true;
+               break;
+         }
+         v += 1;
+         sqlite3_clear_bindings(stmt);
+         sqlite3_reset(stmt);
+        
+      }
+    }
+
+ fclose(fp);
+
+  sqlite3_finalize(stmt);
+
+ if(error_flag)
+   sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, &errorMessage);
+ else    
+   sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+ return v;  
+}
+
+
+unsigned long long import_from_file_edge(database db, char *query,char *fileName){
+
+    //int i, j;
+    unsigned long long edge = 0,  p1, p2;
+    char* errorMessage;
+    bool error_flag = false;
+    FILE *fp ;
+
+    
+    sqlite3_stmt *stmt;
+    sqlite3_prepare_v2(db, query, strlen(query) + 1, &stmt, NULL);
+    
+    printf("\n\n Importing edge from file %s \n\n", fileName);
+    
+       
+
+    sqlite3_exec(db, "BEGIN TRANSACTION", NULL, NULL, &errorMessage);
+
+    fp = fopen (fileName, "r");
+	if (fp == NULL) {
+		printf("Erro na abertura do arquivo.\n");
+	    abort();	
+	}
+	else{
+	while (fscanf(fp, "%llu %llu", &p1, &p2) == 2){
+		
+		 sqlite3_bind_int64(stmt, 1, p1);
+         sqlite3_bind_int64(stmt, 2, p2);
+         
+         if (sqlite3_step(stmt) != SQLITE_DONE) {
+               printf("Commit Failed!\n");
+               error_flag = true;
+               break;
+         }
+
+         edge += 1;
+
+         sqlite3_clear_bindings(stmt);
+         sqlite3_reset(stmt);
+        
+        }
+    }
+
+ fclose(fp);
+
+ sqlite3_finalize(stmt);
+
+ if(error_flag)
+   sqlite3_exec(db, "ROLLBACK TRANSACTION", NULL, NULL, &errorMessage);
+ else    
+   sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+ return edge;
+}
