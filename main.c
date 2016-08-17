@@ -31,13 +31,14 @@ struct _globalArgs {
   int n;    /* -o = B  and -n length of string  -o = r and -n number of nodes*/
   char *op; /* -o */
   int64_t vinit;
+  int64_t low_id;
 
 } globalArgs;
 
 // m - number of symbols
 // n - length of strings
 
-void convert_document(void) {
+void show_init_data(void) {
   printf("Vertex %s\n", globalArgs.vertex_Filename);
   printf("Edge %s\n", globalArgs.edge_Filename);
   printf("Data %s\n", globalArgs.database_Filename);
@@ -47,12 +48,12 @@ void convert_document(void) {
   printf("Data %s\n", globalArgs.op);
 }
 
-static const char *optString = "o:v:e:d:n:m:b:i:";
+static const char *optString = "o:v:e:d:n:m:b:i:l:";
 
 pair *create_intervals(int64_t num, int n_int) {
   pair *temp;
   temp = malloc(n_int * sizeof(pair));
-  uint64_t pass, begin = 1;
+  uint64_t pass, begin =  globalArgs.low_id;
   pass = num / (int64_t)n_int;
   int i; 
 
@@ -127,6 +128,7 @@ int main(int argc, char **argv) {
       0; /* -o = B  and -n length of string  -o = r and -n number of nodes*/
   globalArgs.op = NULL;
   globalArgs.vinit = -1;
+  globalArgs.low_id = 0;
 
   /* Process the arguments with getopt(), then
    * populate globalArgs.
@@ -161,6 +163,10 @@ int main(int argc, char **argv) {
       globalArgs.vinit = S64(strdup(optarg));
       break;
 
+    case 'l':
+      globalArgs.low_id = S64(strdup(optarg));
+      break;  
+
     case 'h': /* fall-through is intentional */
     case '?':
       display_usage();
@@ -175,7 +181,7 @@ int main(int argc, char **argv) {
   }
 
   /********** INIT ****************/
-  convert_document();
+  show_init_data();
   create_database(&db, globalArgs.database_Filename);
   if (db == NULL) {
     printf("Could not open database.");
@@ -213,10 +219,16 @@ int main(int argc, char **argv) {
   /********** END INIT ****************/
 
   /********** LOAD DATA ***************/
+  
+ /* globalArgs.database_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/grafo.db";
+  globalArgs.vertex_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out_v.txt";
+  globalArgs.edge_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out.txt";
+  globalArgs.vinit = 0;
+  globalArgs.op = "i";
+  globalArgs.low_id = 0;*/
 
   int64_t nodes;
   int m, n;
-  // float dens = 0.0;
   nodes = m = n = 0;
 
   begin = clock();
@@ -309,6 +321,7 @@ int main(int argc, char **argv) {
     phase += 1;
     // scatter
 
+    printf("DELETE FROM update_table\n ");
     sql_stmt(db, "DELETE FROM update_table", NULL, NULL);
 
     for (i = 0; i < number_of_intervals; i++) {
@@ -320,23 +333,26 @@ int main(int argc, char **argv) {
       num_vertices = HASH_COUNT(vertices);
       printf("there are %u vertices interval \n", num_vertices);
 
+      printf("begin scatter phase\n ");
       if (scatter(db, &vertices, intervals[i].a, intervals[i].b, phase,
                   updates))
         global_execution = true;
 
+      printf("end scatter phase\n ");  
+      printf("empty hash\n ");  
       empty_hash(&vertices);
     }
 
     if (global_execution) {
       Update *p;
-      for (p = (Update *)utarray_front(updates); p != NULL;
+      /*for (p = (Update *)utarray_front(updates); p != NULL;
            p = (Update *)utarray_next(updates, p)) {
         printf("id: ["
                "%" PRId64 "], parent: ["
                "%" PRId64 "], account ["
                "%" PRId64 "]\n",
                p->id, p->parent, p->account);
-      }
+      }*/
       apply_update(db, updates);
       gather(db);
     }

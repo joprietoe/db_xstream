@@ -91,14 +91,31 @@ bool scatter(database db, Vertex **vertices, int64_t min_id, int64_t max_id , in
 
 void gather(database db) {
   
- printf("gather phase\n"); 
-  char *query = "UPDATE vertex  SET " 
+ printf("begin gather phase\n"); 
+
+ //sql_stmt(db,"create index source_update_index on update_table (id)", NULL, NULL);
+ /*char *query = "UPDATE vertex  SET " 
             "parent = (SELECT update_table.parent FROM update_table WHERE vertex.id = update_table.id ),"
             "phase = (SELECT update_table.account FROM update_table WHERE vertex.id = update_table.id ) "
             "where id in (select update_table.id from update_table where update_table.id = id "
-            "and vertex.phase >= update_table.account )";
+            "and vertex.phase >= update_table.account )";*/
+
+
+char *query = "UPDATE vertex SET " 
+              "parent = (SELECT ut.parent "
+                 "FROM update_table ut " 
+                 "WHERE vertex.id = ut.id),"
+   "phase = (SELECT ut.account "  
+                 "FROM update_table ut " 
+                 "WHERE vertex.id = ut.id) "
+"WHERE EXISTS (SELECT up.id "
+                 "FROM update_table up "
+                 "WHERE vertex.id = up.id "
+                 "AND vertex.phase >= up.account)";
 
   sql_stmt(db,query, NULL,NULL);
+
+  printf("end gather phase\n");
 
 }
 
@@ -116,9 +133,10 @@ Update *generate_update(Vertex *v, Edge *e) {
 
 bool apply_update(database db, UT_array *updates) {
 
- printf("apply_update\n");
+ printf("begin apply_update\n");
   bool ret = sql_insert_updates(db, updates);
   utarray_clear(updates);
+  printf("end apply_update\n");
   return ret;
 }
 
