@@ -87,7 +87,82 @@ bool scatter(database db, Vertex **vertices, int64_t min_id, int64_t max_id , in
      
 }
 
+void scatter_aux_v2(database db, Edge *e, int64_t phase, UT_array *updates) {
+      
+      Update *up = NULL;
+      Vertex *v = NULL;
+      //HASH_FIND_INT(*vertices, &e->from, v);
+      //if(v->parent != -1 && v->value == phase - 1){  // IMPORTANT TO MAKE A RIGHT UPDATE (v->value == phase - 1)!
+        
+        do {
+          up = generate_update(v,e);// save array<update> if memory is full
+          if(up){
+            up->account = phase;
+            utarray_push_back(updates, up);
+            break;
+            //return true;
+          }
+          else{
+            apply_update(db,updates);
+          }
+        } while(!up);
+      //}
+      
+     // return false;
+}
 
+void scatter_v2(database db, int64_t min_id, int64_t max_id , int64_t phase, UT_array *updates){
+
+    char* errorMessage;
+    int retval;
+    //bool result = false;
+    Edge *edge = NULL;
+    sql_stmt(db,"BEGIN TRANSACTION", NULL, NULL);
+    sqlite3_stmt *stmt;
+    //source integer, target integer, cost integer
+    char buffer[] = "select source, target, cost from edge e join vertex v on e.source = v.id "
+                    "where source >= ?1 and source <= ?2 "
+                    "and v.parent != -1 and v.phase == ?3 - 1";
+                    
+
+    retval = sqlite3_prepare_v2(db, buffer, strlen(buffer), &stmt, NULL);
+  
+    sqlite3_bind_int64(stmt, 1, min_id); // or i+1 check this
+    sqlite3_bind_int64(stmt, 2, max_id);
+    sqlite3_bind_int64(stmt, 3, phase);
+
+    while (1) { //Here search something about sqlite3_step vs sqlite3_exec
+        retval = sqlite3_step(stmt);
+
+       if (retval == SQLITE_ROW) {
+            edge =  malloc(sizeof(Edge));
+            edge->from = (int64_t) sqlite3_column_int(stmt, 0);
+            edge->to = (int64_t) sqlite3_column_int(stmt, 1);
+            edge->cost = (int64_t) sqlite3_column_int(stmt, 2);
+            scatter_aux_v2(db,edge,phase,updates);
+            free(edge);
+            
+            //utarray_push_back(result, &value);
+            // printf("Adya Node %d, Value : %d \n", r, value);
+
+        } else if (retval == SQLITE_DONE) {
+            break;
+        } else {
+            sqlite3_finalize(stmt);
+            printf("Some error encountered\n");
+            //result = false;
+            break;
+        }
+
+    }
+
+    //sqlite3_clear_bindings(stmt);
+    //sqlite3_reset(stmt);
+    sqlite3_exec(db, "COMMIT TRANSACTION", NULL, NULL, &errorMessage);
+    sqlite3_finalize(stmt);
+        
+
+}
 
 void gather(database db) {
   

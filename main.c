@@ -51,11 +51,11 @@ void convert_document( void )
 static const char *optString = "o:v:e:d:n:m:b:";
 
 
-pair * create_intervals(int num, int n_int){
+pair * create_intervals(int64_t num, int n_int){
 		pair *temp;
 		temp = malloc(n_int * sizeof(pair));
 		uint64_t pass;
-		pass = num/n_int;
+        pass = num/(int64_t)n_int;
 		int i, begin = 1;
 		
 		for(i = 0; i < n_int; i++){
@@ -206,18 +206,18 @@ int main(int argc, char** argv) {
 
     /********** LOAD DATA ***************/
    
-    int nodes, m, n;
-    //float dens = 0.0;
+    int m, n;
+    int64_t nodes;
     nodes = m = n = 0;
 
      begin = clock();
 
-     if(!strcmp(globalArgs.op, "r"))
-            gera_grafo(db,  globalArgs.n, globalArgs.m);
-     else if(!strcmp(globalArgs.op, "B"))
-         igraph_de_bruijn(db, globalArgs.m,  globalArgs.n);
-     else 
-           import_from_txt_file(db,  "/home/julio/vscode/db_xstream/out_v.txt",  "/home/julio/vscode/db_xstream/out.txt");
+     //if(!strcmp(globalArgs.op, "r"))
+      //      gera_grafo(db,  globalArgs.n, globalArgs.m);
+     //else if(!strcmp(globalArgs.op, "B"))
+     //    igraph_de_bruijn(db, globalArgs.m,  globalArgs.n);
+     //else 
+       nodes = import_from_txt_file(db,  "/home/julio/vscode/db_xstream/out_v.txt",  "/home/julio/vscode/db_xstream/out.txt");
    
     // printf("Nodos y densidad: ");
      //scanf("%d,%f",&nodes,&dens);
@@ -290,11 +290,11 @@ int main(int argc, char** argv) {
     UT_icd update_icd = {sizeof(Update), NULL, NULL, NULL};
     utarray_new(updates,&update_icd);
     
-    Vertex *vertices = NULL;
+   // Vertex *vertices = NULL;
 
 
     /*************** REAL STUFF ****************************/
-    init_alg(db,0);
+    init_alg(db,1);
 
     //bool gather_execution = true;
 
@@ -309,16 +309,18 @@ int main(int argc, char** argv) {
         for(i = 0; i < number_of_intervals; i++){
              //load vertices
 
-             sql_stmt_prepare_vertex(db, &vertices, intervals[i].a, intervals[i].b);
+             //sql_stmt_prepare_vertex(db, &vertices, intervals[i].a, intervals[i].b);
              
-             unsigned int num_vertices;
-             num_vertices = HASH_COUNT(vertices);
-             printf("there are %u vertices interval \n", num_vertices);
+             //unsigned int num_vertices;
+             //num_vertices = HASH_COUNT(vertices);
+            // printf("there are %u vertices interval \n", num_vertices);
              
-              if(scatter(db, &vertices, intervals[i].a, intervals[i].b, phase, updates))
+              scatter_v2(db, intervals[i].a, intervals[i].b, phase, updates);
+
+              if(utarray_len(updates) > 0)
                     global_execution = true;
 
-             empty_hash(&vertices);
+             //empty_hash(&vertices);
 
             
         }

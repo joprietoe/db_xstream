@@ -15,6 +15,8 @@ bool scatter_aux(database db, Vertex **vertices, Edge *e, int64_t phase, UT_arra
 
 bool scatter(database db, Vertex **vertices, int64_t min_id, int64_t max_id , int64_t phase, UT_array *updates);
 
+void scatter_v2(database db, int64_t min_id, int64_t max_id , int64_t phase, UT_array *updates);
+
 void gather(database db);
 
 Update *generate_update(Vertex *v, Edge *e);

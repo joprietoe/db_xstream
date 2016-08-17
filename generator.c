@@ -3,6 +3,7 @@
 #include "type.h"
 #include "sqlite3.h"
 #include <inttypes.h> 
+#include <stdint.h>
 #include <math.h>
 #include <limits.h>
 #include <stdio.h>
@@ -11,13 +12,16 @@
 //char buffer[] = "INSERT INTO edge (source, target, cost) VALUES (?1, ?2, 1)";
     //char buffer2[] = "INSERT INTO vertex(id, parent, phase) VALUES (?1, -1 , ?2)";
 
-void import_from_txt_file(database db, char *vertex_filename, char *edge_filename){
+int64_t import_from_txt_file(database db, char *vertex_filename, char *edge_filename){
 
+    int64_t nodes;
     char *edge = "INSERT INTO edge (source, target, cost) VALUES (?1, ?2, 1)";
     char *vertex = "INSERT INTO vertex(id, parent, phase) VALUES (?1, -1 , ?2)";
     
-    import_from_file_vertex(db,vertex,vertex_filename);
+    nodes = import_from_file_vertex(db,vertex,vertex_filename);
     import_from_file_edge(db,edge,edge_filename);
+
+    return nodes;
 
 }
 
