@@ -99,7 +99,17 @@ void gather(database db) {
             "phase = (SELECT update_table.account FROM update_table WHERE vertex.id = update_table.id ) "
             "where id in (select update_table.id from update_table where update_table.id = id "
             "and vertex.phase >= update_table.account )";*/
+/*
+replace  into vertex (id,parent,phase) 
+select v.id,ut.parent,ut.account from vertex v left join update_table ut
+on v.id = ut.id
+where v.phase > ut.account
+group by v.id 
+having min(account) = account
+*/
 
+/*
+*/
 
 char *query = "UPDATE vertex SET " 
               "parent = (SELECT ut.parent "
