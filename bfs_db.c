@@ -60,7 +60,7 @@ bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...){
     
     char* errorMessage;
     int retval;
-    bool result;
+    bool result = false;
     sql_stmt(db,"BEGIN TRANSACTION", NULL, NULL);
     sqlite3_stmt *stmt;
 

@@ -124,8 +124,7 @@ int main(int argc, char **argv) {
   globalArgs.database_Filename = NULL;
   globalArgs.dens = 0.0; /* -o = r and -d */
   globalArgs.m = 0; /* -o = B and -m */ // number of symbols
-  globalArgs.n =
-      0; /* -o = B  and -n length of string  -o = r and -n number of nodes*/
+  globalArgs.n = 0; /* -o = B  and -n length of string  -o = r and -n number of nodes*/
   globalArgs.op = NULL;
   globalArgs.vinit = -1;
   globalArgs.low_id = 0;
@@ -181,6 +180,16 @@ int main(int argc, char **argv) {
   }
 
   /********** INIT ****************/
+
+  globalArgs.database_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/grafo.db";
+  globalArgs.vertex_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/out_v.txt";
+  globalArgs.edge_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/out.txt";
+  globalArgs.vinit = 1;
+  globalArgs.op = "i";
+  globalArgs.low_id = 1;
+  
+
+
   show_init_data();
   create_database(&db, globalArgs.database_Filename);
   if (db == NULL) {
@@ -192,9 +201,14 @@ int main(int argc, char **argv) {
   sql_stmt(db, "PRAGMA temp_store = MEMORY", NULL, NULL);
   sql_stmt(db, "PRAGMA JOURNAL_MODE=OFF", NULL, NULL);
   // sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
-  sql_stmt(db, "PRAGMA cache_size=5000", NULL, NULL);
-  sql_stmt(db, "PRAGMA main.cache_size=10000", NULL, NULL);
+  sql_stmt(db, "PRAGMA cache_size=10000", NULL, NULL);
+  //sql_stmt(db, "PRAGMA main.cache_size=10000", NULL, NULL);
   sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);
+  // define SQLITE_MAX_MMAP_SIZE 0x7fff0000  /* 2147418112 */
+  //sql_stmt(db, "PRAGMA max_page_count = 195313", NULL, NULL);
+  sql_stmt(db, "PRAGMA read_uncommitted = true", NULL, NULL);
+  sql_stmt(db, "PRAGMA page_size=1024", NULL, NULL);
+  sql_stmt(db, "VACUUM", NULL,NULL);
   //sql_stmt(db, "PRAGMA main.journal_mode=WAL;", NULL, NULL);
 
 
@@ -220,13 +234,7 @@ int main(int argc, char **argv) {
 
   /********** LOAD DATA ***************/
   
- /* globalArgs.database_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/grafo.db";
-  globalArgs.vertex_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out_v.txt";
-  globalArgs.edge_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out.txt";
-  globalArgs.vinit = 0;
-  globalArgs.op = "i";
-  globalArgs.low_id = 0;*/
-
+  
   int64_t nodes;
   int m, n;
   nodes = m = n = 0;
@@ -274,8 +282,11 @@ int main(int argc, char **argv) {
   fprintf(fd, "Time spent in graph creation: %.3f\n", time_spent);
 
   /********************** CREATE INDEX ***************************/
+
+  printf("\n create index for edge\n");
   sql_stmt(db,"create index source_edge_index on edge (source)", NULL, NULL);
-  sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL, NULL);
+  printf("\n create index for vertex\n");
+  sql_stmt(db,"create index unique_vertex_index on vertex (id)", NULL, NULL);
 
   // printf("\nNumber of edges [%U]\n\n");
 
@@ -297,9 +308,9 @@ int main(int argc, char **argv) {
 
   /******************** CREATE INTERVALS ******************/
 
-  int number_of_intervals, i;
-  printf("Number of intervals: ");
-  scanf("%d", &number_of_intervals);
+  int number_of_intervals = 4, i;
+  //printf("Number of intervals: ");
+  //scanf("%d", &number_of_intervals);
   pair *intervals = create_intervals(nodes, number_of_intervals);
 
   /************ INIT SOME STRUCTS ***********************/
@@ -344,7 +355,7 @@ int main(int argc, char **argv) {
     }
 
     if (global_execution) {
-      Update *p;
+      //Update *p;
       /*for (p = (Update *)utarray_front(updates); p != NULL;
            p = (Update *)utarray_next(updates, p)) {
         printf("id: ["
