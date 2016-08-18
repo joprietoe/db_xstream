@@ -101,14 +101,107 @@ int64_t S64(const char *s) {
 
 int main(int argc, char** argv) {
 
-   
+   clock_t begin, end;
+  double time_spent = 0.0;
+  // FILE* fd = NULL;
+  FILE *fd = NULL;
+  time_t start_t, end_t;
+  double diff_t;
+  database db = NULL;
+  // globalArgs g_args;
+
+  int opt = 0;
+
+  /* Initialize globalArgs before we get to work. */
+  globalArgs.vertex_Filename = NULL; /* false */
+  globalArgs.edge_Filename = NULL;
+  globalArgs.database_Filename = NULL;
+  globalArgs.dens = 0.0; /* -o = r and -d */
+  globalArgs.m = 0; /* -o = B and -m */ // number of symbols
+  globalArgs.n = 0; /* -o = B  and -n length of string  -o = r and -n number of nodes*/
+  globalArgs.op = NULL;
+  globalArgs.vinit = -1;
+  globalArgs.low_id = 0;
+
+  /* Process the arguments with getopt(), then
+   * populate globalArgs.
+   */
+  // opt = getopt( argc, argv, optString );
+  while ((opt = getopt(argc, argv, optString)) != -1) {
+    switch (opt) {
+    case 'o':
+      globalArgs.op = strdup(optarg);
+      break;
+    case 'd':
+      globalArgs.dens = atof(optarg);
+      break;
+    case 'm':
+      globalArgs.m = atoi(optarg);
+      break;
+    case 'n':
+      globalArgs.n = atoi(optarg);
+      break;
+    case 'v':
+      globalArgs.vertex_Filename = strdup(optarg); /* true */
+      break;
+    case 'e':
+      globalArgs.edge_Filename = strdup(optarg);
+      break;
+
+    case 'b':
+      globalArgs.database_Filename = strdup(optarg);
+      break;
+    
+    case 'i':
+      globalArgs.vinit = S64(strdup(optarg));
+      break;
+
+    case 'l':
+      globalArgs.low_id = S64(strdup(optarg));
+      break;  
+
+    case 'h': /* fall-through is intentional */
+    case '?':
+      display_usage();
+      break;
+
+    default:
+      /* You won't actually get here. */
+      break;
+    }
+
+    // opt = getopt( argc, argv, optString );
+  }
+
+  /********** INIT ****************/
+
+  globalArgs.database_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/grafo.db";
+  globalArgs.vertex_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/out_v.txt";
+  globalArgs.edge_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/out.txt";
+  globalArgs.vinit = 1;
+  globalArgs.op = "i";
+  globalArgs.low_id = 1;
+
+   show_init_data();
+  create_database(&db, globalArgs.database_Filename);
+  if (db == NULL) {
+    printf("Could not open database.");
+    return 1;
+  }
+
+
   sql_stmt(db, "PRAGMA synchronous=OFF", NULL, NULL);
   sql_stmt(db, "PRAGMA temp_store = MEMORY", NULL, NULL);
   sql_stmt(db, "PRAGMA JOURNAL_MODE=OFF", NULL, NULL);
   // sql_stmt(db, "PRAGMA LOCKING_MODE=EXCLUSIVE", NULL, NULL);
-  sql_stmt(db, "PRAGMA cache_size=5000", NULL, NULL);
-  sql_stmt(db, "PRAGMA main.cache_size=10000", NULL, NULL);
+  sql_stmt(db, "PRAGMA cache_size=10000", NULL, NULL);
+  //sql_stmt(db, "PRAGMA main.cache_size=10000", NULL, NULL);
   sql_stmt(db, "PRAGMA mmap_size=268435456", NULL, NULL);
+  // define SQLITE_MAX_MMAP_SIZE 0x7fff0000  /* 2147418112 */
+  //sql_stmt(db, "PRAGMA max_page_count = 195313", NULL, NULL);
+  sql_stmt(db, "PRAGMA read_uncommitted = true", NULL, NULL);
+  sql_stmt(db, "PRAGMA page_size=1024", NULL, NULL);
+  sql_stmt(db, "VACUUM", NULL,NULL);
   //sql_stmt(db, "PRAGMA main.journal_mode=WAL;", NULL, NULL);
 
 
@@ -132,14 +225,8 @@ int main(int argc, char** argv) {
 
   /********** END INIT ****************/
 
-
-    /********** LOAD DATA ***************/
-  /* globalArgs.database_Filename = "/home/aluno/Julio-Work/vscode-workspace/db_xstream/grafo.db";
-  globalArgs.vertex_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out_v.txt";
-  globalArgs.edge_Filename = "/home/aluno/Julio-Work/Utils-db_stream/PaRMAT/Release/out.txt";
-  globalArgs.vinit = 0;
-  globalArgs.op = "i";
-  globalArgs.low_id = 0;*/
+  /********** LOAD DATA ***************/
+ 
 
   int64_t nodes;
   int m, n;
@@ -186,11 +273,12 @@ int main(int argc, char** argv) {
   }
 
   fprintf(fd, "Time spent in graph creation: %.3f\n", time_spent);
-    
-    /********************** CREATE INDEX ***************************/
+  
   /********************** CREATE INDEX ***************************/
+   printf("\n create index for edge\n");
   sql_stmt(db,"create index source_edge_index on edge (source)", NULL, NULL);
-  sql_stmt(db,"create unique index unique_vertex_index on vertex (id)", NULL, NULL);
+  printf("\n create index for vertex\n");
+  sql_stmt(db,"create index unique_vertex_index on vertex (id)", NULL, NULL);
 
   // printf("\nNumber of edges [%U]\n\n");
 

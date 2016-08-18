@@ -10,7 +10,7 @@
 bool init_alg(database db, int64_t vertex) {
 
   char *query = "UPDATE vertex SET phase = 0, parent = 0 where id = ?1";
-  return !sql_stmt_prepare(db, query, 1, vertex);
+  return sql_stmt_prepare(db, query, 1, vertex);
 }
 
 bool scatter_aux(database db, Vertex **vertices, Edge *e, int64_t phase, UT_array *updates) {

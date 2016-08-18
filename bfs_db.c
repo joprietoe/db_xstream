@@ -59,7 +59,7 @@ void sql_stmt(database db, const char* query, void * data, int (*callback)(void*
 bool sql_stmt_prepare(database db, const char *sql, uint8_t argc, ...){
     
     char* errorMessage;
-    int retval;
+    int retval = false;
     bool result;
     sql_stmt(db,"BEGIN TRANSACTION", NULL, NULL);
     sqlite3_stmt *stmt;
